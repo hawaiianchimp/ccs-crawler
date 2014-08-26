@@ -1,0 +1,27 @@
+{
+  "name": "ccs-crawler",
+  "version": "1.0.0",
+  "description": "Crawler for building a catalog",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/npm/npm.git"
+  },
+  "config": {
+    "port": "8080"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "crawler": "^0.2.6",
+    "dotenv": "^0.4.0",
+    "express": "^4.8.2",
+    "express3-handlebars": "^0.5.1",
+    "robots": "^0.9.4",
+    "sitemapper": "0.0.1"
+  },
+  "engines": {
+    "node": ">= v0.8.14"
+  }
+}

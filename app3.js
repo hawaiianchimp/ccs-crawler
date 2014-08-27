@@ -75,8 +75,9 @@ rparser.setUrl(robots_url, function(parser, success){
 				for(var i=0; i<NUMBER_OF_CRAWLERS;i++){
 					console.log('\r\n\r\nSpawning crawler for sites:', ((i*incr+1) +"-" + (i*incr+incr)).info);
 
-					//create a thread for the each child with the 'spider.js' code
-					children[i] = cp.fork(__dirname+'/spider.js', sites.slice(i*incr,i*incr+incr));
+					//create a thread for the each child with the 'spider.js' code, and send the split sites as a message
+					children[i] = cp.fork(__dirname+'/spider.js');
+					children[i].send({sites: sites.slice(i*incr,i*incr+incr)});
    					console.log('Crawler '+(i+1)+' spawned, pid: '+("" + children[i].pid).help);
 
    					//calculate time on exit

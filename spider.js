@@ -19,38 +19,34 @@ colors.setTheme({
 });
 
 //console log start
-console.log("\r\n\r\n" + icon.success, ("Crawler " + process.pid +" started").success);
 
-//start crawler
-var c = new Crawler({
-   "maxConnections": 10,
-   "debug": true,
-   "cache": false,
-   "skipDuplicates": false,
-   "onDrain": function(){
-      //exit process when crawler finishes queue
-      process.exit();
-   },
-   "callback": function (error,result,$){
-      //use selectors to grab info off page the website in this loop
-      if($)
-      {
-         var price = (p=$("[itemtype$='Product'] [itemprop='price']").text().match(/([\d\.,]+)/)) ? p[1]:null;
-         console.log("Price: $%d".warn,price);
+process.on("message", function(data){
+   console.log("\r\n\r\n" + icon.success, ("Crawler " + process.pid +" started").success);
+
+   //start crawler
+   var c = new Crawler({
+      "maxConnections": 10,
+      "debug": true,
+      "cache": false,
+      "skipDuplicates": false,
+      "onDrain": function(){
+         //exit process when crawler finishes queue
+         process.exit();
+      },
+      "callback": function (error,result,$){
+         //use selectors to grab info off page the website in this loop
+         if($)
+         {
+            var price = (p=$("[itemtype$='Product'] [itemprop='price']").text().match(/([\d\.,]+)/)) ? p[1]:null;
+            console.log("Price: $%d".warn,price);
+         }
       }
-   }
+   });
+
+   //queue the sites from the message passed
+   c.queue(data.sites);
+   console.log("Queued %d sites".info, data.sites.length);
 });
-
-//get the argument from the parent fork
-//arguments look like "node spider.js http://www.example1.com http://www.example2.com"
-sites = process.argv;
-
-//first two arguments are "node spider.js" ignore them for crawling
-sites = process.argv.slice(2,process.argv.length);
-
-//queue the sites from the arguments
-c.queue(sites);
-console.log("Queued %d sites".info, sites.length);
 
 // detect and report if this child exited
 process.on("exit", function() {

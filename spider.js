@@ -19,39 +19,66 @@ colors.setTheme({
 });
 
 //console log start
-
-process.on("message", function(data){
-   console.log("\r\n\r\n" + icon.success, ("Crawler " + process.pid +" started").success);
-
-   //start crawler
-   var c = new Crawler({
-      "maxConnections": 10,
-      "debug": true,
-      "cache": false,
-      "skipDuplicates": false,
-      "onDrain": function(){
-         //exit process when crawler finishes queue
-         process.exit();
-      },
-      "callback": function (error,result,$){
-         //use selectors to grab info off page the website in this loop
+console.log("\r\n\t",icon.success, ("Crawler " + process.argv[2] + " (" +process.pid +") started").success, "\r\n");
+process.send({
+         "cid": process.argv[2],
+         "pid": process.pid,
+         "message":"increment"
+      });
+//start crawler
+var c = new Crawler({
+   "maxConnections": 10,
+   "debug": false,
+   "cache": false,
+   "skipDuplicates": false,
+   "onDrain": function(){
+      //exit process when crawler finishes queue
+      process.send({
+         "cid": process.argv[2],
+         "pid": process.pid,
+         "message":"empty"
+      });
+   },
+   "callback": function (error,result,$){
+      //use selectors to grab info off page the website in this loop
+      if(!error)
+      {
+         console.info(("GET "+result.window.location.href).input);
          if($)
          {
             var price = (p=$("[itemtype$='Product'] [itemprop='price']").text().match(/([\d\.,]+)/)) ? p[1]:null;
             console.log("Price: $%d".warn,price);
          }
       }
-   });
+      else
+      {
+         console.error(("" + error).error);
+      }
+   }
+});
 
+process.on("message", function(data){
    //queue the sites from the message passed
-   c.queue(data.sites);
-   console.log("Queued %d sites".info, data.sites.length);
+   if(data.message == "queue")
+   {
+      c.queue(data.site);
+      console.log(("Crawler(" + process.pid + "): Queued site " + data.site).info);
+   }
+   else if(data.message == "die")
+   {
+      process.exit();
+   }
 });
 
 // detect and report if this child exited
 process.on("exit", function() {
    //print to console
-   console.log(icon.success, ("Crawler "+ process.pid +" finished\r\n\r\n").success);
+   process.send({
+         "cid": process.argv[2],
+         "pid": process.pid,
+         "message":"decrement"
+      });
+   console.log("\r\n\t",icon.success, ("Crawler "+ process.argv[2] + " ("+ process.pid +") finished").success, "\r\n");
 });
 // detect and report if this child was killed
 process.on("SIGTERM", function() {

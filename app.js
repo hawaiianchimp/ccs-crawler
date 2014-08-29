@@ -1,18 +1,28 @@
+var NUMBER_OF_CRAWLERS = 5;
+var child = 'spider2.js';
+var domain = 'wp.seantburke.com';
+var filterURL = function(url){
+	return true; //(url.match(/http(s)?:\/\/((www|.+)\.)?abt\.com\/product/)) ? true: false;
+}
+
+
 var Crawler = require("crawler").Crawler,
 	// express = require("express"),
 	// handlebars = require("express3-handlebars"),
 	// dotenv = require('dotenv'),
+	semaphore = require('semaphore')(NUMBER_OF_CRAWLERS),
 	robots = require('robots'),
 	colors = require('colors'),
 	icon = require('log-symbols'),
 	// async = require('async'),
 	rparser = new robots.RobotsParser(),
 	sitemapper = new require('sitemapper'),
+	cp = require('child_process'),
 	crawler_count = 0,
 	sitemaps = [],
 	sites = [],
 	children = [],
-	cp = require('child_process');
+	i=0;
 
 //set theme colors
 colors.setTheme({
@@ -30,12 +40,6 @@ colors.setTheme({
 });
 
 //number of crawlers to use. More crawlers uses more resources and 
-var NUMBER_OF_CRAWLERS = 5;
-var child = 'spider2.js';
-var domain = 'www.abt.com';
-var filterURL = function(url){
-	return (url.match(/http(s)?:\/\/((www|.+)\.)?abt\.com\/product/)) ? true: false;
-}
 
 //for calculating total time
 var start = new Date();
@@ -55,40 +59,7 @@ var end = new Date();
 console.log("# of crawlers     : ", ("" + NUMBER_OF_CRAWLERS).info);
 				// var incr = Math.round(sites.length/NUMBER_OF_CRAWLERS);
 				// console.log("sites per crawler : ", ("" + incr).info);
-for(var i=0; i<NUMBER_OF_CRAWLERS;i++){
 
-	children[i] = cp.fork(__dirname+'/'+child, [i]);
-   	console.log('Crawler '+("" + children[i].pid).help +' spawned');
-
-	children[i].on('exit', function (code) {
-		//when crawler finishes calculate time and log to console.
-		children[i] = undefined;
-	});
-
-	children[i].on('message', function(data) {
-		if(data.message == "empty")
-		{
-			//console.info(icon.sucess, "Crawler "+data.cid+" ("+ data.pid +")is finished".success);
-			children[data.cid].send({"message":"die"});
-		}
-		else if(data.message == "increment")
-		{
-			crawler_count++;
-			console.log("# of Crawlers Running: ", crawler_count);
-		}
-		else if(data.message == "decrement")
-		{
-			crawler_count--;
-			console.log("# of Crawlers Running: ", crawler_count);
-			if(crawler_count === 0)
-			{
-				var end = new Date;
-				console.log((""+end).input);
-				console.log(("Total elapsed time: ".input+((end.getTime() - start.getTime())/1000 + "s").help));
-			}
-		}
-	});
-}
 
 
 
@@ -114,15 +85,51 @@ rparser.setUrl(robots_url, function(parser, success){
 				// console.log("sites per crawler : ", ("" + incr).info);
 
 				//spawn child crawlers
-				for(var i=0; i<sites.length;i++){
-					var crawlerIndex = (i % NUMBER_OF_CRAWLERS);
+				for(var i=0; i<sites.length;){
+					//console.log(i);
+					semaphore.take(function(){
+						console.log(i);
+						children[i] = cp.fork(__dirname+'/'+child, [i]);
+						children[i].send({
+							"message":"queue",
+							"site": sites[i]
+						});
+					   	console.log('Crawler '+("" + children[i].pid).help +' spawned');
+
+						children[i].on('exit', function (code) {
+							//when crawler finishes remove from memory
+							children[i] = undefined;
+						});
+
+						children[i].on('message', function(data) {
+							if(data.message == "empty")
+							{
+								//console.info(icon.sucess, "Crawler "+data.cid+" ("+ data.pid +")is finished".success);
+								children[data.cid].send({"message":"die"});
+							}
+							else if(data.message == "increment")
+							{
+								crawler_count++;
+								console.log("# of Crawlers Running: ", crawler_count);
+							}
+							else if(data.message == "decrement")
+							{
+								semaphore.leave();
+								crawler_count--;
+								console.log("# of Crawlers Running: ", crawler_count);
+								if(crawler_count === 0)
+								{
+									var end = new Date;
+									console.log((""+end).input);
+									console.log(("Total elapsed time: ".input+((end.getTime() - start.getTime())/1000 + "s").help));
+								}
+							}
+						});
+						i++;
+					});
 					//console.log('\r\n\r\nSpawning crawler for sites:', ((i*incr+1) +"-" + (i*incr+incr)).info);
 
 					//create a thread for the each child with the 'spider.js' code, and send the split sites as a message
-					children[crawlerIndex].send({
-						"message":"queue",
-						"site": sites[i]
-					});
 
    					//calculate time on exit
 				}

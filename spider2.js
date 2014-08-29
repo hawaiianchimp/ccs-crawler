@@ -1,11 +1,8 @@
 
-
-
 var Crawler = require("crawler").Crawler
    colors = require('colors'),
    icon = require('log-symbols'),
    PI = require("PI");
-
 
 //set console colors
 colors.setTheme({
@@ -36,12 +33,9 @@ var c = new Crawler({
 	"cache": false,
 	"skipDuplicates": false,
 	"onDrain": function(){
+		console.log("Draining");
 		//exit process when crawler finishes queue
-		process.send({
-			"cid": process.argv[2],
-			"pid": process.pid,
-			"message":"empty"
-		});
+		process.exit();
 	},
 	"callback": function (error,result,$){
 		 //use selectors to grab info off page the website in this loop
@@ -130,6 +124,7 @@ process.on("message", function(data){
 // detect and report if this child exited
 process.on("exit", function() {
    //print to console
+   console.log("exiting");
    process.send({
          "cid": process.argv[2],
          "pid": process.pid,

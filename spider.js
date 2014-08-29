@@ -30,6 +30,7 @@ var c = new Crawler({
    "maxConnections": 10,
    "debug": false,
    "cache": false,
+   "timeout": 5000,
    "skipDuplicates": false,
    "onDrain": function(){
       //exit process when crawler finishes queue

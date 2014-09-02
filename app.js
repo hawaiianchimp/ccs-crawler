@@ -10,7 +10,7 @@ var Crawler = require("crawler").Crawler,
 	// express = require("express"),
 	// handlebars = require("express3-handlebars"),
 	// dotenv = require('dotenv'),
-	semaphore = require('semaphore')(NUMBER_OF_CRAWLERS),
+	semaphore = require('node-semaphore')(NUMBER_OF_CRAWLERS),
 	robots = require('robots'),
 	colors = require('colors'),
 	icon = require('log-symbols'),
@@ -22,7 +22,7 @@ var Crawler = require("crawler").Crawler,
 	sitemaps = [],
 	sites = [],
 	children = [],
-	i=0;
+	i=0,init_crawlers=0;
 
 //set theme colors
 colors.setTheme({
@@ -85,54 +85,77 @@ rparser.setUrl(robots_url, function(parser, success){
 				// console.log("sites per crawler : ", ("" + incr).info);
 
 				//spawn child crawlers
-				for(var i=0; i<sites.length;){
-					//console.log(i);
-					semaphore.take(function(){
-						console.log(i);
-						children[i] = cp.fork(__dirname+'/'+child, [i]);
-						children[i].send({
-							"message":"queue",
-							"site": sites[i]
-						});
-					   	console.log('Crawler '+("" + children[i].pid).help +' spawned');
 
-						children[i].on('exit', function (code) {
-							//when crawler finishes remove from memory
-							children[i] = undefined;
-						});
-
-						children[i].on('message', function(data) {
-							if(data.message == "empty")
-							{
-								//console.info(icon.sucess, "Crawler "+data.cid+" ("+ data.pid +")is finished".success);
-								children[data.cid].send({"message":"die"});
+				for(i=0;i<NUMBER_OF_CRAWLERS && init_crawlers < NUMBER_OF_CRAWLERS;i++)
+				{
+					console.log(i);
+					children[i] = cp.fork(__dirname+'/'+child, [i]);
+					children[i].send({
+						"message":"init"
+					})
+					children[i].on('message', function(data){
+						if(data.message == 'init')
+						{
+							console.log("init_crawlers:", ++init_crawlers);
+							if(init_crawlers == NUMBER_OF_CRAWLERS){
+								childLoop();
 							}
-							else if(data.message == "increment")
+						}
+					});
+				}
+				function childLoop(){
+					while(sites.length > 0){
+						//console.log(i);
+							i = (i % NUMBER_OF_CRAWLERS);
+							if(crawler_count <= NUMBER_OF_CRAWLERS)
 							{
 								crawler_count++;
-								console.log("# of Crawlers Running: ", crawler_count);
+								var site = sites.pop();
+								//children[i] = cp.fork(__dirname+'/'+child, [i]);
+								children[i].send({
+									"message":"queue",
+									"site": site
+								});
+						   		console.log('Crawler '+("" + children[i].pid).help +' spawned');
+						   		i++;
 							}
-							else if(data.message == "decrement")
-							{
-								semaphore.leave();
-								crawler_count--;
-								console.log("# of Crawlers Running: ", crawler_count);
-								if(crawler_count === 0)
+
+							children[i].on('exit', function (code) {
+								//when crawler finishes remove from memory
+								children[i] = undefined;
+							});
+
+							children[i].on('message', function(data) {
+								console.log("Message: ",data.message);
+								if(data.message == "empty")
 								{
-									var end = new Date;
-									console.log((""+end).input);
-									console.log(("Total elapsed time: ".input+((end.getTime() - start.getTime())/1000 + "s").help));
+									//console.info(icon.sucess, "Crawler "+data.cid+" ("+ data.pid +")is finished".success);
+									children[data.cid].send({"message":"die"});
 								}
-							}
-						});
-						i++;
-					});
-					//console.log('\r\n\r\nSpawning crawler for sites:', ((i*incr+1) +"-" + (i*incr+incr)).info);
+								else if(data.message == "increment")
+								{
+									//crawler_count++;
+									console.log("# of Crawlers Running: ", crawler_count);
+								}
+								else if(data.message == "decrement")
+								{
+									crawler_count--;
+									console.log("# of Crawlers Running: ", crawler_count);
+									if(crawler_count === 0)
+									{
+										var end = new Date;
+										console.log((""+end).input);
+										console.log(("Total elapsed time: ".input+((end.getTime() - start.getTime())/1000 + "s").help));
+									}
+								}
+							});
+						//console.log('\r\n\r\nSpawning crawler for sites:', ((i*incr+1) +"-" + (i*incr+incr)).info);
 
-					//create a thread for the each child with the 'spider.js' code, and send the split sites as a message
+						//create a thread for the each child with the 'spider.js' code, and send the split sites as a message
 
-   					//calculate time on exit
-				}
+	   					//calculate time on exit
+					}
+				};
 			})
 		});
 	}

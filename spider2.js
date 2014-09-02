@@ -119,6 +119,10 @@ process.on("message", function(data){
    {
       process.exit();
    }
+   else if(data.message == "init")
+   {
+      process.send({"message":"init"});
+   }
 });
 
 // detect and report if this child exited

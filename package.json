@@ -20,6 +20,7 @@
     "express": "^4.8.2",
     "express3-handlebars": "^0.5.1",
     "log-symbols": "^1.0.0",
+    "node-semaphore": "0.0.2",
     "robots": "^0.9.4",
     "sitemapper": "0.0.1"
   },

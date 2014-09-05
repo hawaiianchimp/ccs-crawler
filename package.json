@@ -20,8 +20,12 @@
     "express": "^4.8.2",
     "express3-handlebars": "^0.5.1",
     "log-symbols": "^1.0.0",
+    "memwatch": "^0.2.2",
+    "request": "^2.40.0",
     "robots": "^0.9.4",
-    "sitemapper": "0.0.1"
+    "sitemapper": "0.0.1",
+    "strong-agent": "^0.4.14",
+    "PI": "0.0.1"
   },
   "engines": {
     "node": ">= v0.8.14"

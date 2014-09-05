@@ -1,3 +1,11 @@
+//number of crawlers to use. More crawlers uses more resources and 
+var NUMBER_OF_CRAWLERS = 5;
+var child = 'spider3.js';
+var domain = 'www.royalpalacebanquet.com';
+var filterURL = function(url){
+	return true; //(url.match(/http(s)?:\/\/((www|.+)\.)?abt\.com\/product/)) ? true: false;
+}
+
 var Crawler = require("crawler").Crawler,
 	// express = require("express"),
 	// handlebars = require("express3-handlebars"),
@@ -28,14 +36,6 @@ colors.setTheme({
 	debug: 'blue',
 	error: 'red'
 });
-
-//number of crawlers to use. More crawlers uses more resources and 
-var NUMBER_OF_CRAWLERS = 5;
-var child = 'spider2.js';
-var domain = 'www.abt.com';
-var filterURL = function(url){
-	return (url.match(/http(s)?:\/\/((www|.+)\.)?abt\.com\/product/)) ? true: false;
-}
 
 //for calculating total time
 var start = new Date();

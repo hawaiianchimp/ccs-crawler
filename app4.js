@@ -63,7 +63,7 @@ rparser.setUrl(robots_url, function(parser, success){
 			sitemapper.getSites(sitemaps[0], function(err, sites){
 				sites = sites.filter(function(e){
 					//Regex to filter only valid urls; return true to crawl
-					return (e.match(/http(s)?:\/\/((www|.+)\.)?abt\.com\/product/)) ? true: false;
+					return true; //(e.match(/http(s)?:\/\/((www|.+)\.)?abt\.com\/product/)) ? true: false;
 				});
 				//crawler information
 				console.log("# of sitemap sites: ", ("" + sites.length).info);
@@ -73,12 +73,11 @@ rparser.setUrl(robots_url, function(parser, success){
 
 				//spawn child crawlers
 				for(var i=0; i<NUMBER_OF_CRAWLERS;i++){
-					console.log('\r\n\r\nSpawning crawler for sites:', ((i*incr+1) +"-" + (i*incr+incr)).info);
+					console.log('\r\n\r\nSpawning crawler:' + i);
 
 					//create a thread for the each child with the 'spider.js' code, and send the split sites as a message
-					children[i] = cp.fork(__dirname+'/spider2.js', [i]);
-
-					
+					children[i] = cp.fork(__dirname+'/spider.js');
+					children[i].send({sites: sites.slice(i*incr,i*incr+incr)});
    					console.log('Crawler '+(i+1)+' spawned, pid: '+("" + children[i].pid).help);
 
    					//calculate time on exit
@@ -90,11 +89,6 @@ rparser.setUrl(robots_url, function(parser, success){
 						children[i] = undefined;
 					});
 
-				}
-				var k=0;
-				for(var j=0; j<sites.length;j++){
-					k = k % NUMBER_OF_CRAWLERS;
-					children[k].send({message:"queue", site: sites[j]});
 				}
 			})
 		});

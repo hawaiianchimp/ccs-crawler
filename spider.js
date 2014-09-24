@@ -28,7 +28,7 @@ process.send({
 //start crawler
 var c = new Crawler({
    "maxConnections": 10,
-   "debug": false,
+   "debug": true,
    "cache": false,
    "timeout": 5000,
    "skipDuplicates": false,

@@ -26,6 +26,7 @@ process.send({
          "pid": process.pid,
          "message":"increment"
       });
+
 //start crawler
 var c = new Crawler({
 	"maxConnections": 10,
@@ -113,7 +114,7 @@ process.on("message", function(data){
    if(data.message == "queue")
    {
       c.queue(data.site);
-      console.log(("Crawler(" + process.pid + "): Queued site " + data.site).info);
+      //console.log(("Crawler(" + process.pid + "): Queued site " + data.site).info);
    }
    else if(data.message == "die")
    {
